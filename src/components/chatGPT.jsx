@@ -10,7 +10,7 @@ const ChatGPT = () => {
     const HTTP = "http://localhost:3004/chat";
     const [input1, setInput1] = useState("");
     const [input2, setInput2] = useState("");
-    const [total, setTotal] = useState(null);
+    const [total, setTotal] = useState(0);
     const categories = {
         Beans: 0.000697175,
         Dairy: 0.003233967,
@@ -28,7 +28,6 @@ const ChatGPT = () => {
         Vegetables: 0.000533252,
     }
 
-    let ingredientsDict;
     const recipe = `Ingredients:\n
     2 bell peppers (any color)\n
     200g rice\n
@@ -60,7 +59,9 @@ const ChatGPT = () => {
                 temp = res.data;
                 console.log(request);
                 console.log(response)
-                ingredientsDict = parseIngredientsAndSteps(temp);
+                console.log(temp)
+                const ingredientsDict = parseIngredientsAndSteps(res.data);
+                console.log(ingredientsDict)
                 setTotal(calculateScore(ingredientsDict))
             })
             .catch((error) => {
@@ -81,12 +82,17 @@ const ChatGPT = () => {
         const dicts = Foodcarbon;
         const commodities = dicts.map((item) => item.commodity);
         const carbonValues = dicts.map((item) => item.total);
+        console.log(commodities)
+        console.log(carbonValues)
 
         const ingredients = Object.keys(dict);
         const quantities = Object.values(dict);
-
+        console.log(ingredients)
+        console.log(quantities)
+        
         let factor;
-        let total = 0;
+        let grandtotal = 0;
+        console.log(grandtotal)
 
         for (let i = 0; i < ingredients.length; i++) {
             let rawCarbon = null;
@@ -94,9 +100,8 @@ const ChatGPT = () => {
 
             for (let j = 0; j < commodities.length; j++) {
                 console.log(ingredients[i])
-                if (commodities[j].toLowerCase().includes(ingredients[i])) {
+                if (commodities[j].toLowerCase().includes(ingredients[i].toLowerCase())) {
                     rawCarbon = carbonValues[i];
-                    console.log(rawCarbon)
                     break;
                 }
             }
@@ -122,53 +127,38 @@ const ChatGPT = () => {
                 for (let i = 0; i < cats.length; i++) {
                     if (cats[i].includes(category)) {
                         rawCarbon = scores[i];
-                        console.log(rawCarbon)
                         break;
                     }
                 }
             }
 
-            total += rawCarbon * factor;
+            grandtotal += rawCarbon * factor;
+            // console.log(grandtotal)
         }
 
-        return total;
+        return grandtotal;
 
     }
 
-    // Function for parsing ingredients/steps from a recipe
+    // // Function for parsing ingredients/steps from a recipe
     function parseIngredientsAndSteps(text) {
         const ingredientsDict = {};
+        console.log("text: " + text)
 
         // Split the text into lines
         const lines = text.split('\n');
+        console.log("lines: " + lines)
 
-        let isIngredientSection = false;
-        let isStepSection = false;
-
-        // Iterate over each line
-        for (const line of lines) {
-            // Remove leading and trailing whitespaces
-            const trimmedLine = line.trim();
-
-            // Check if the line is not empty
-            if (trimmedLine !== '') {
-                // Check if the line indicates the start of the ingredient section
-                if (trimmedLine.toLowerCase().includes('ingredients:')) {
-                    isIngredientSection = true;
-                    isStepSection = false;
-                } else if (trimmedLine.toLowerCase().includes('steps:')) {
-                    isIngredientSection = false;
-                    isStepSection = true;
-                } else if (isIngredientSection) {
-                    // Process the line as an ingredient
-                    const ingredientData = parseIngredientLine(trimmedLine);
-                    if (ingredientData) {
-                        const { quantity, ingredient } = ingredientData;
-                        ingredientsDict[ingredient] = quantity;
-                    }
+        for (let line of lines) {
+            if (line.startsWith("- ") && line.includes("g")) {
+                line = line.replace("- ", "").trim();
+                const [measurement, ingredient] = line.split(" ", 2);
+                if (measurement.includes("g")) {
+                    ingredientsDict[ingredient.trim()] = measurement.replace("g", "").trim();
                 }
             }
         }
+
         return ingredientsDict;
     }
 
