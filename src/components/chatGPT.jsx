@@ -53,7 +53,7 @@ const ChatGPT = () => {
         setPrompt(request);
 
         axios
-            .post(`${ HTTP } `, { prompt: request })
+            .post(`${HTTP} `, { prompt: request })
             .then((res) => {
                 setResponse(res.data.split("\n")); // used to be setResponse(res.data.split("\n"));
                 temp = res.data;
@@ -89,7 +89,7 @@ const ChatGPT = () => {
         const quantities = Object.values(dict);
         console.log(ingredients)
         console.log(quantities)
-        
+
         let factor;
         let grandtotal = 0;
         console.log(grandtotal)
@@ -203,7 +203,16 @@ const ChatGPT = () => {
                         </div>
                     </div>
                     <button style={{ marginTop: '10px' }} type="submit">Submit</button>
-                    <p>{total} kG {'\n'} of Carbon Emissions generated from this recipe</p>
+                    {total !== 0 && (
+                        <div>
+                            <p><strong>{total.toFixed(8)} kG </strong>{'\n'} of Carbon Emissions generated from this recipe</p>
+                            <p>That's equivalent to:</p>
+                            <p><strong>{(total * 0.113).toFixed(8)} gallons</strong> of gasoline consumed</p>
+                            <p><strong>{(total * 0.098).toFixed(8)} pounds</strong> of coal burned</p>
+                            <p><strong>{(total * 122).toFixed(8)} smartphones</strong> charged with that energy</p>
+                        </div>
+                    )}
+
                 </form>
             </div>
             <div style={{ flex: 2 }} id="recipe">
