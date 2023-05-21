@@ -9,7 +9,6 @@ const App = () => {
       <Navbar />
       <LandingPage />
       <Content />
-      <div style={{marginBottom: 1000}}></div>
     </div>
   );
 };
