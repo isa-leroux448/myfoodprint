@@ -37,12 +37,13 @@ body {
 
   .container {
     display: flex;
+    margin-top: 50px;
     justify-content: center;
-    align-items: center;
+    align-items: start;
     align-content: start;
     height: 80vh;
     flex-direction: column;
-    width: 50%;
+    width: 80%;
     margin: auto;
     padding: 20px;
   }
@@ -100,4 +101,18 @@ button {
     padding: 12px 20px;
     margin: 8px 0;
     box-sizing: border-box;
+  }
+
+  #prompt {
+    padding-right: 100px;
+
+  }
+
+  #recipe {
+    padding-top: 50px;
+    background-color: #CFECBF;
+    padding: 10px;
+    margin: auto;
+    margin-top: 50px;
+    border-radius: 10px;
   }
