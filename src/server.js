@@ -7,7 +7,7 @@ const bodyParser = require("body-parser");
 const { Configuration, OpenAIApi } = require("openai");
 
 const config = new Configuration({
-  apiKey: "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",
+  apiKey: "",
 });
 
 const openai = new OpenAIApi(config);
