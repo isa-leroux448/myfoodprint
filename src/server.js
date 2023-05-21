@@ -7,7 +7,7 @@ const bodyParser = require("body-parser");
 const { Configuration, OpenAIApi } = require("openai");
 
 const config = new Configuration({
-  apiKey: "",
+  apiKey: "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",
 });
 
 const openai = new OpenAIApi(config);
@@ -32,7 +32,7 @@ app.post("/chat", async (req, res) => {
   res.send(completion.data.choices[0].text);
 });
 
-const PORT = 3003;
+const PORT = 3004;
 
 app.listen(PORT, () => {
   console.log(`Server is running on port: ${PORT}`);

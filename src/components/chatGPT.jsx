@@ -1,14 +1,34 @@
 import React, { useState } from "react";
 import axios from "axios";
+import CSVHandler from "./csvHandler";
+import Foodcarbon from '../assets/foodcarbon.js';
 
 const ChatGPT = () => {
     const [prompt, setPrompt] = useState("");
-    const [ingredients, setIngredients] = useState("");
     const [response, setResponse] = useState([]);
-    const HTTP = "http://localhost:3003/chat";
+    const [category, setCategory] = useState("");
+    const HTTP = "http://localhost:3004/chat";
     const [input1, setInput1] = useState("");
     const [input2, setInput2] = useState("");
+    const [total, setTotal] = useState(null);
+    const categories = {
+        Beans: 0.000697175,
+        Dairy: 0.003233967,
+        Fruits: 0.000360526,
+        Grains: 0.002039904,
+        Herbs: 0.022660015,
+        Meat: 0.007519074,
+        Misc: 0.001404764,
+        NutsAndSeeds: 0.001192009,
+        Oils: 0.001688693,
+        Processed: 0.00186071,
+        RootCrops: 0.00026,
+        Seafood: 0.005281368,
+        Tubers: 0.000382605,
+        Vegetables: 0.000533252,
+    }
 
+    let ingredientsDict;
     const recipe = `Ingredients:\n
     2 bell peppers (any color)\n
     200g rice\n
@@ -28,31 +48,92 @@ const ChatGPT = () => {
     Serve the bell pepper rice as a side dish or as a main course.`;
 
     const handleSubmit = (e) => {
+        let temp;
         e.preventDefault();
         const request = `generate a low carbon emission footprint recipes containing ${input1} and ${input2}.only include the ingredients measured in g and steps.please make sure to format the response as a string and add new lines(\n) for code after each ingredient and every step.`
         setPrompt(request);
-        //console.log(prompt)
 
-        // axios
-        //     .post(`${ HTTP } `, { prompt: request })
-        //     .then((res) => {
-        //         setResponse(res.data.split("\n"));
-        //         console.log(request);
-        //         console.log(response)
-        //     })
-        //     .catch((error) => {
-        //         console.log(error);
-        //     });
-        setIngredients(recipe);
-        const ingredientsDict = parseIngredientsAndSteps(recipe);
-        console.log(ingredientsDict);
+        axios
+            .post(`${ HTTP } `, { prompt: request })
+            .then((res) => {
+                setResponse(res.data.split("\n")); // used to be setResponse(res.data.split("\n"));
+                temp = res.data;
+                console.log(request);
+                console.log(response)
+                ingredientsDict = parseIngredientsAndSteps(temp);
+                setTotal(calculateScore(ingredientsDict))
+            })
+            .catch((error) => {
+                console.log(error);
+            });
 
-        setResponse(recipe.split("\n"));
+        // ingredientsDict = parseIngredientsAndSteps(temp);
+        // setTotal(calculateScore(ingredientsDict))
+
+        //setResponse(recipe.split("\n"));
 
         setInput1("");
         setInput2("");
         setPrompt("");
     };
+
+    function calculateScore(dict) {
+        const dicts = Foodcarbon;
+        const commodities = dicts.map((item) => item.commodity);
+        const carbonValues = dicts.map((item) => item.total);
+
+        const ingredients = Object.keys(dict);
+        const quantities = Object.values(dict);
+
+        let factor;
+        let total = 0;
+
+        for (let i = 0; i < ingredients.length; i++) {
+            let rawCarbon = null;
+            factor = quantities[i] / 100;
+
+            for (let j = 0; j < commodities.length; j++) {
+                console.log(ingredients[i])
+                if (commodities[j].toLowerCase().includes(ingredients[i])) {
+                    rawCarbon = carbonValues[i];
+                    console.log(rawCarbon)
+                    break;
+                }
+            }
+
+            if (rawCarbon == null) {
+                console.log("nope");
+                rawCarbon = 0;
+                const request = `given the following ingredient: ${ingredients[i]}, classify it as one of the following categories: Beans, Dairy, Fruits, Grains, Meat, Nuts&Seeds, Oils, Processed, Seafood, Tubers or Vegetable. Simply return the category`
+                axios
+                    .post(`${HTTP} `, { prompt: request })
+                    .then((res) => {
+                        setCategory(res.data);
+                        console.log(request);
+                        console.log(res.data)
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                    });
+
+                // find score from dict using response
+                const cats = Object.keys(categories)
+                const scores = Object.values(categories)
+                for (let i = 0; i < cats.length; i++) {
+                    if (cats[i].includes(category)) {
+                        rawCarbon = scores[i];
+                        console.log(rawCarbon)
+                        break;
+                    }
+                }
+            }
+
+            total += rawCarbon * factor;
+        }
+
+        return total;
+
+    }
 
     // Function for parsing ingredients/steps from a recipe
     function parseIngredientsAndSteps(text) {
@@ -88,7 +169,6 @@ const ChatGPT = () => {
                 }
             }
         }
-
         return ingredientsDict;
     }
 
@@ -104,22 +184,6 @@ const ChatGPT = () => {
         return null;
     }
 
-    // Function to convert dictionary to CSV format
-    const convertDictionaryToCSV = (dictionary) => {
-        const keys = Object.keys(dictionary);
-        const values = Object.values(dictionary);
-        let csv = '';
-
-        // Add header row
-        csv += keys.join(',') + '\n';
-
-        // Add data row
-        csv += values.join(',') + '\n';
-
-        return csv;
-    };
-
-
     return (
         <div className="container" style={{ display: "flex", flexDirection: "row" }}>
             <div style={{ flex: 1 }} id="prompt">
@@ -131,7 +195,6 @@ const ChatGPT = () => {
                             <label htmlFor="input1">Ingredient 1:    </label>
                             <input
                                 id="input1"
-                                className="shadow-sm"
                                 type="text"
                                 placeholder="Enter text"
                                 value={input1}
@@ -143,7 +206,6 @@ const ChatGPT = () => {
                             <label htmlFor="input2">Ingredient 2:    </label>
                             <input
                                 id="input2"
-                                className="shadow-sm"
                                 type="text"
                                 placeholder="Enter text"
                                 value={input2}
@@ -151,6 +213,7 @@ const ChatGPT = () => {
                         </div>
                     </div>
                     <button style={{ marginTop: '10px' }} type="submit">Submit</button>
+                    <p>{total} kG {'\n'} of Carbon Emissions generated from this recipe</p>
                 </form>
             </div>
             <div style={{ flex: 2 }} id="recipe">
